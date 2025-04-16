@@ -2,62 +2,67 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\RegisterRequest;
-use App\Http\Requests\LoginRequest;
 use Illuminate\Http\Request;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    public function registration()
+    public function showRegister()
     {
         return view('auth.register');
     }
 
-    public function register(RegisterRequest $request)
-    {
-        $name = $request->validated('name');
-        $email = $request->validated('email');
-        $password = $request->validated('password');
 
-        $user = User::create([
-            'name' => $name,
-            'email' => $email,
-            'password' => Hash::make($password)
+    public function register(Request $request)
+    {
+        $request->validate([
+            'name' => 'required',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|min:6|confirmed'
         ]);
 
-        Auth::login($user);
 
-        return redirect()->route('dashboard');
+        User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
+
+
+        return redirect('/login')->with('success', 'Registered successfully. Please login.');
     }
 
-    public function login()
+
+    public function showLogin()
     {
         return view('auth.login');
     }
 
-    public function auth_attempt(LoginRequest $request)
+
+    public function login(Request $request)
     {
+        $credentials = $request->only('email', 'password');
 
-        if (Auth::attempt($request->validated())) {
 
+        if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-
-            return redirect()->route('dashboard');
+            return redirect('/dashboard');
         }
 
-        return back()->with([
-            'error' => 'The provided credentials do not match our records.'
-        ])->onlyInput('email');
+
+        return back()->withErrors([
+            'email' => 'Invalid credentials.',
+        ]);
     }
+
 
     public function logout(Request $request)
     {
         Auth::logout();
-        $request->session()->regenerate();
-
-        return redirect()->route('login');
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect('/login');
     }
 }

@@ -1,13 +1,8 @@
-@extends('layouts.app')
+<h1>Welcome, {{ auth()->user()->name }}!</h1>
+<p>You are logged in as {{ auth()->user()->email }}</p>
 
-@section('contents')
 
-   <h1>Dashboard</h1>
-   <h2>Welcome {{ $user->name}}</h2>
-
-   <form action="{{ route('auth.logout') }}" method="POST">
-       @csrf
-       <input type="submit" value="logout">
-   </form>
-
-@endsection
+<form method="POST" action="/logout">
+    @csrf
+    <button type="submit">Logout</button>
+</form>
